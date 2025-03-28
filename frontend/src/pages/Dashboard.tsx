@@ -1,10 +1,12 @@
 // src/pages/Dashboard.tsx
 import { Layout } from "@/components/layout/Layout";
+import { SummaryCards } from "@/components/dashboard/SummaryCards";
 
 export default function DashboardPage() {
-  return (
-    <Layout>
-      <div className="text-muted-foreground">대시보드 구성 예정...</div>
-    </Layout>
-  );
+    return (
+        <Layout>
+            <SummaryCards />
+            {/* 다음 작업들 */}
+        </Layout>
+    );
 }
