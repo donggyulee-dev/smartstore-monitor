@@ -1,6 +1,6 @@
 import React from "react";
 import { SummaryCardProps } from "@/types/dashboard";
-import { SUMMARY_DATA, ICON_MAP } from "@/constants/dashboard";
+import { SUMMARY_DATA, ICON_MAP } from "@/data/dashboard";
 
 export const SummaryCard: React.FC<SummaryCardProps> = ({ title, value, change, icon }) => {
     return (

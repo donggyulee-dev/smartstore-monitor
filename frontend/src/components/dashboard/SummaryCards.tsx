@@ -1,5 +1,5 @@
 import React from "react";
-import { SUMMARY_DATA, ICON_MAP } from "@/constants/dashboard";
+import { SUMMARY_DATA, ICON_MAP } from "@/data/dashboard";
 
 interface SummaryCardProps {
     title: string;
