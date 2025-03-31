@@ -2,7 +2,7 @@ name: CI - Build and Notify
 
 on:
   push:
-    branches: [develop, feature/**]
+    branches: [develop, feature/**, main]
   pull_request:
     branches: [develop]
 
@@ -42,7 +42,8 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_COLOR: ${{ job.status == 'success' && '#2eb886' || '#e01e5a' }}
-          SLACK_TITLE: ${{ job.status == 'success' && '✅ 빌드 성공' || '❌ 빌드 실패' }}
+          SLACK_TITLE: >-
+            ${{ github.ref_name == 'main' && '🎉 배포 성공 (main 반영됨)' || job.status == 'success' && '✅ 빌드 성공' || '❌ 빌드 실패' }}
           SLACK_MESSAGE: |
             *브랜치:* `${{ github.ref_name }}`
             *커밋:* `${{ github.event.head_commit.message }}`
@@ -51,4 +52,4 @@ jobs:
           SLACK_FOOTER: 'GitHub Actions'
           SLACK_LINK_NAMES: true
           SLACK_USERNAME: 'CI Bot'
-          SLACK_ICON_EMOJI: ':robot_face:'
+          SLACK_ICON_EMOJI: ':rocket:'
