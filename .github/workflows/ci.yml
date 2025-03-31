@@ -30,10 +30,18 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Notify Slack on failure
-        if: failure()
+      - name: Notify Slack on build result
+        if: always()
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_COLOR: '#FF0000'
-          SLACK_TITLE: '❌ SmartStore Monitor CI 실패 알림'
+          SLACK_COLOR: ${{ job.status == 'success' && '#2eb886' || '#e01e5a' }}
+          SLACK_TITLE: ${{ job.status == 'success' && '✅ 빌드 성공' || '❌ 빌드 실패' }}
+          SLACK_MESSAGE: |
+            *브랜치:* `${{ github.ref_name }}`
+            *커밋:* `${{ github.event.head_commit.message }}`
+            *작성자:* `${{ github.actor }}`
+          SLACK_FOOTER: 'GitHub Actions'
+          SLACK_LINK_NAMES: true
+          SLACK_USERNAME: 'CI Bot'
+          SLACK_ICON_EMOJI: ':robot_face:'
