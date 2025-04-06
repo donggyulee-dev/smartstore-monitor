@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth";
 import orderRoutes from "./routes/order";
+import { startOrderPollingJob } from "./jobs/orderJob";
 
 // 1. 환경 변수 설정
 dotenv.config();
@@ -34,7 +35,10 @@ app.get("/api/ping", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
 
-// 7. 서버 시작
+// 7. 주문 폴링 작업 시작
+startOrderPollingJob();
+
+// 8. 서버 시작
 app.listen(PORT, () => {
     console.log(`[server] Server is running on port ${PORT}`);
 });
