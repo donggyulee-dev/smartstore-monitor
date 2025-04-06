@@ -1,6 +1,9 @@
 // src/jobs/orderJob.ts
 import { fetchRecentOrders } from "../services/orderService";
 import { CONFIG } from "../config";
+import { sendSlackMessage } from "../utils/slack";
+import { SmartstoreOrderResponse } from "../types/order.types";
+import { NotifiedCache } from "../utils/notifiedCache";
 
 // 환경 변수에서 설정한 주문 폴링 주기 사용
 const ORDER_POLLING_INTERVAL = CONFIG.ORDER_POLLING_INTERVAL;
@@ -9,8 +12,32 @@ const ORDER_POLLING_INTERVAL = CONFIG.ORDER_POLLING_INTERVAL;
 let orderPollingIntervalId: NodeJS.Timeout | null = null;
 let isPollingRunning = false;
 
-// 중복 처리 방지를 위한 임시 캐시
-const notifiedOrderIds = new Set<string>();
+// 처리된 주문 ID 관리
+const orderCache = new NotifiedCache("processed_orders.csv");
+
+function formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleString("ko-KR", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
+
+function formatOrderSlackMessage(order: SmartstoreOrderResponse): string {
+    return [
+        "🛎️ [주문 알림] 신규 주문이 접수되었습니다!",
+        "",
+        `🗓️ 주문일자: ${formatDate(order.orderDate)}`,
+        `📦 상품명: ${order.productName}`,
+        `🧩 옵션: ${order.option ?? "없음"}`,
+        `👤 주문자: ${order.ordererName}`,
+        `📞 연락처: ${order.ordererTel}`,
+        `🧾 주문번호: ${order.productOrderId}`,
+    ].join("\n");
+}
 
 export function startOrderPollingJob() {
     if (isPollingRunning) {
@@ -45,7 +72,7 @@ async function checkNewOrders() {
         const orders = await fetchRecentOrders();
 
         // 새로운 주문 필터링 (중복 제외)
-        const newOrders = orders.filter((order) => !notifiedOrderIds.has(order.productOrderId));
+        const newOrders = orders.filter((order) => !orderCache.has(order.productOrderId));
 
         if (newOrders.length > 0) {
             console.log(`[job] 새로운 주문 발견: ${newOrders.length}건`);
@@ -55,20 +82,13 @@ async function checkNewOrders() {
                 console.log(`[job] [${idx + 1}] ${order.productOrderId} | ${order.ordererName} | ${order.productName}`);
             });
 
-            // 처리된 주문 ID 캐시에 추가
-            newOrders.forEach((order) => {
-                notifiedOrderIds.add(order.productOrderId);
-            });
+            // 처리된 주문 ID 추가
+            orderCache.addMany(newOrders.map((order) => order.productOrderId));
 
-            // TODO: 향후 Slack 연동 처리
-        }
-
-        // 캐시 크기 관리 (최근 1000개만 유지)
-        if (notifiedOrderIds.size > 1000) {
-            const idsArray = Array.from(notifiedOrderIds);
-            const newIds = new Set(idsArray.slice(-1000));
-            notifiedOrderIds.clear();
-            idsArray.slice(-1000).forEach((id) => notifiedOrderIds.add(id));
+            // 신규 주문 정보를 Slack에 전송
+            for (const order of newOrders) {
+                await sendSlackMessage(formatOrderSlackMessage(order));
+            }
         }
     } catch (error) {
         console.error("[job] 주문 확인 실패:", error);
