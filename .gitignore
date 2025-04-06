@@ -34,3 +34,6 @@ dist-ssr/
 .turbo/
 .next/
 coverage/
+
+# Data
+data/
