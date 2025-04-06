@@ -21,8 +21,16 @@ export async function getValidToken(): Promise<NaverTokenPayload | null> {
 
 async function refreshToken(): Promise<NaverTokenPayload | null> {
     try {
-        const clientId = process.env.CLIENT_ID!;
-        const clientSecret = process.env.CLIENT_SECRET!;
+        const clientId = process.env.CLIENT_ID;
+        const clientSecret = process.env.CLIENT_SECRET;
+
+        if (!clientId || !clientSecret) {
+            console.error("[auth] 환경 변수 누락:", {
+                clientId: !!clientId,
+                clientSecret: !!clientSecret,
+            });
+            throw new Error("CLIENT_ID 또는 CLIENT_SECRET 환경 변수가 설정되지 않았습니다.");
+        }
 
         console.log("[auth] 토큰 발급 시도:", { clientId });
 
@@ -57,12 +65,7 @@ async function refreshToken(): Promise<NaverTokenPayload | null> {
         console.log("[auth] 토큰 발급 성공:", access_token.slice(0, 20) + "...");
         return currentToken;
     } catch (error) {
-        const axiosError = error as AxiosError<NaverErrorResponse>;
-        console.error("[auth] 토큰 발급 실패:", {
-            status: axiosError.response?.status,
-            data: axiosError.response?.data,
-            message: axiosError.message,
-        });
+        console.error("[auth] 토큰 발급 실패:", error);
         return null;
     }
 }
